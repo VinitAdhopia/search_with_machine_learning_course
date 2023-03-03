@@ -78,6 +78,7 @@ def create_feature_log_query(query, doc_ids, click_prior_query, featureset_name,
 
     ##### Step 3.b:
     query_obj = {
+        "size": size,
         'query': {
             'bool': {
                 "filter": [  # use a filter so that we don't actually score anything
