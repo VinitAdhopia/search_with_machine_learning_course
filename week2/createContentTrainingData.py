@@ -20,7 +20,7 @@ general.add_argument("--output", default="/workspace/datasets/fasttext/output.fa
 general.add_argument("--label", default="id", help="id is default and needed for downsteam use, but name is helpful for debugging")
 
 # IMPLEMENT: Setting min_products removes infrequent categories and makes the classifier's task easier.
-general.add_argument("--min_products", default=0, type=int, help="The minimum number of products per category (default is 0).")
+general.add_argument("--min_products", default=500, type=int, help="The minimum number of products per category (default is 0).")
 
 args = parser.parse_args()
 output_file = args.output
@@ -33,6 +33,7 @@ if args.input:
     directory = args.input
 # IMPLEMENT: Track the number of items in each category and only output if above the min
 min_products = args.min_products
+
 names_as_labels = False
 if args.label == 'name':
     names_as_labels = True
@@ -48,22 +49,36 @@ def _label_filename(filename):
             child.find('categoryPath')[len(child.find('categoryPath')) - 1][0].text is not None and
             child.find('categoryPath')[0][0].text == 'cat00000' and
             child.find('categoryPath')[1][0].text != 'abcat0600000'):
-              # Choose last element in categoryPath as the leaf categoryId or name
-              if names_as_labels:
-                  cat = child.find('categoryPath')[len(child.find('categoryPath')) - 1][1].text.replace(' ', '_')
-              else:
-                  cat = child.find('categoryPath')[len(child.find('categoryPath')) - 1][0].text
-              # Replace newline chars with spaces so fastText doesn't complain
-              name = child.find('name').text.replace('\n', ' ')
-              labels.append((cat, transform_name(name)))
+                # Choose last element in categoryPath as the leaf categoryId or name
+                if names_as_labels:
+                    cat = child.find('categoryPath')[len(child.find('categoryPath')) - 1][1].text.replace(' ', '_')
+                else:
+                    cat = child.find('categoryPath')[len(child.find('categoryPath')) - 1][0].text
+                # Replace newline chars with spaces so fastText doesn't complain
+                name = child.find('name').text.replace('\n', ' ')
+                labels.append((cat, transform_name(name)))
     return labels
 
 if __name__ == '__main__':
+
+    products_by_category = {}
+
     files = glob.glob(f'{directory}/*.xml')
-    print("Writing results to %s" % output_file)
+    print("Processing...")
     with multiprocessing.Pool() as p:
         all_labels = tqdm(p.imap(_label_filename, files), total=len(files))
-        with open(output_file, 'w') as output:
-            for label_list in all_labels:
-                for (cat, name) in label_list:
-                    output.write(f'__label__{cat} {name}\n')
+
+        for label_list in all_labels:
+            for (cat, name) in label_list:
+
+                if products_by_category.get(cat) is None:
+                    products_by_category[cat] = []
+
+                products_by_category.get(cat).append(name)
+
+    print("Writing results to %s" % output_file)
+    with open(output_file, 'w') as output:
+        for key in products_by_category.keys():
+            if len(products_by_category[key]) >= min_products:
+                for product in products_by_category[key]:
+                    output.write(f'__label__{key} {product}\n')
