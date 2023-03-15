@@ -7,6 +7,8 @@ import csv
 
 # Useful if you want to perform stemming.
 import nltk
+from nltk.tokenize import word_tokenize
+
 stemmer = nltk.stem.PorterStemmer()
 
 categories_file_name = r'/workspace/datasets/product_data/categories/categories_0001_abcat0010000_to_pcmcat99300050000.xml'
@@ -48,7 +50,18 @@ parents_df = pd.DataFrame(list(zip(categories, parents)), columns =['category', 
 queries_df = pd.read_csv(queries_file_name)[['category', 'query']]
 queries_df = queries_df[queries_df['category'].isin(categories)]
 
-# IMPLEMENT ME: Convert queries to lowercase, and optionally implement other normalization, like stemming.
+# Convert queries to lower case, replace non-alphanumeric chars with a space and replace consecutive spaces with a single space
+queries_df['query'] = queries_df['query'].str.lower().replace("[^0-9a-z]+", " ", regex=True).replace("\s+", " ", regex=True)
+
+# For every query, tokenize the query, stem each individual token, then rejoin and update the panda
+for i, row in queries_df.iterrows():
+    query = queries_df.at[i, 'query']
+    tokens = word_tokenize(query)
+    stemmed_tokens = []
+    for token in tokens:
+        stemmed_tokens.append(stemmer.stem(token))
+    stemmed_tokens = ' '.join(stemmed_tokens)
+    queries_df.at[i,'query'] = stemmed_tokens
 
 # IMPLEMENT ME: Roll up categories to ancestors to satisfy the minimum number of queries per category.
 
