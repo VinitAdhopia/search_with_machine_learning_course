@@ -202,7 +202,7 @@ def search(client, user_query, index="bbuy_products", sort="_score", sortDir="de
     # Load our query classification model
     model = fasttext.load_model(query_classification_model)
     predictions = model.predict(user_query, num_predictions)
-    print(f"predictions: {predictions}, {predictions[0]}, {predictions[1]}, {predictions[0][0]}, {predictions[1][0]}")
+    print(f"predictions: {predictions}")
 
     category_prefix_len = len("__label__")
     category_ids = []
