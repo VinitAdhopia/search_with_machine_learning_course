@@ -234,7 +234,7 @@ def search(client, user_query, index="bbuy_products", sort="_score", sortDir="de
         ]
 
     # Note: you may also want to modify the `create_query` method above
-    query_obj = create_query(user_query, click_prior_query=None, filters=filters, sort=sort, sortDir=sortDir, source=["name", "shortDescription", "categoryPath", "categoryPathIds", "categoryLeaf"])
+    query_obj = create_query(user_query, click_prior_query=None, filters=filters, sort="regularPrice", sortDir=sortDir, source=["name", "shortDescription", "categoryPath", "categoryPathIds", "categoryLeaf"])
     logging.info(query_obj)
     response = client.search(query_obj, index=index)
     if response and response['hits']['hits'] and len(response['hits']['hits']) > 0:
